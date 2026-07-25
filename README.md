@@ -56,39 +56,51 @@ Telegram Summary
 - Google Sheets is used as persistent task storage.
 - Telegram serves as the primary user interface.
 
-## 💬 Demo
+## ✨ Features
 
-### 🎤 Input
+- Transcribes Telegram voice messages into text using Whisper.
+- Extracts meeting summaries and action items with OpenAI.
+- Uses Structured Output to ensure consistent JSON responses.
+- Saves extracted tasks to Google Sheets.
+- Creates Google Calendar events when meeting dates are detected.
+- Processes each extracted task independently using a dedicated workflow branch.
+- Sends concise meeting summaries back to Telegram.
 
-Voice message sent via Telegram.
+## 🛠 Tech Stack
 
----
+- n8n
+- OpenAI GPT-4o
+- Whisper
+- Telegram Bot API
+- Google Sheets API
+- Google Calendar API
 
-### 🤖 AI Output
+## 🎯 Key Skills Demonstrated
 
-**Summary**
+- AI Workflow Design
+- LLM Integration
+- Structured Output
+- Workflow Orchestration
+- Google Workspace Integration
+- Data Transformation
+- Conditional Logic
+- Speech-to-Text Processing
+- Task Automation
+- Business Process Automation
 
-> The project kickoff meeting was held with the client. Development will begin on Monday. The design team will prepare the initial mockups.
+## 🔮 Future Improvements
 
-**Extracted Tasks**
+- Support multiple meeting languages.
+- Store meeting summaries in a database.
+- Add automatic email summaries.
+- Integrate with project management tools (Jira, Trello, Asana).
+- Generate meeting analytics and reports.
 
-- Alex — Prepare project structure — Monday
-- Anna — Create UI mockups — Tuesday
+## 👤 Author
 
----
+**Alexander Zaytsev**
 
-### 📅 Google Calendar
+AI Automation Engineer (Junior)
 
-Meeting event created automatically when a meeting date is detected.
-
----
-
-### 📊 Google Sheets
-
-All extracted tasks are automatically stored for further tracking.
-
----
-
-### 📲 Telegram
-
-A concise meeting summary is sent back to the user.
+- GitHub: https://github.com/AlexZaytsev-ai
+- Email: polonix315@gmail.com
