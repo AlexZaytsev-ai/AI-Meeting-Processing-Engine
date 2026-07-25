@@ -54,30 +54,33 @@ Telegram Summary
 
 ## Features
 
-• AI-powered meeting analysis
-• Automatic task extraction
-• Google Calendar integration
-• Google Sheets synchronization
-• Telegram notifications
-• Structured JSON output
-• Independent task processing
+- AI-powered meeting analysis
+- Automatic task extraction
+- Google Calendar integration
+- Google Sheets synchronization
+- Telegram notifications
+- Structured JSON output
+- Independent task processing
 
 ## Tech Stack
 
-n8n
-OpenAI GPT-4o
-Whisper
-Telegram Bot API
-Google Sheets API
-Google Calendar API
+- n8n
+- OpenAI GPT-4o
+- Whisper
+- Telegram Bot API
+- Google Sheets API
+- Google Calendar API
 
 ## Repository Structure
 
-README.md
-LICENSE
-workflow.png
-workflow/
-    ai-meeting-processing-engine.json
+```text
+.
+├── README.md
+├── LICENSE
+├── workflow.png
+└── workflow/
+    └── ai-meeting-processing-engine.json
+```
 
 ## Key Skills Demonstrated
 
