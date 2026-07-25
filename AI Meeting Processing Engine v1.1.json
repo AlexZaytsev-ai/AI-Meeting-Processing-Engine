@@ -1,0 +1,621 @@
+{
+  "name": "AI Meeting Processing Engine v1.1",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "AI Meeting Processing Engine\n\n\nAutomatically processes voice meetings:\n\n• Generate summary\n• Extract action items\n• Save tasks to Google Sheets\n• Create Google Calendar events\n\n\nStack\n\n• n8n\n• OpenAI GPT-4.1 Mini\n• Whisper\n• Structured Output\n• Telegram Bot API\n• Google Sheets API\n• Google Calendar API\n• Google OAuth2",
+        "height": 400,
+        "width": 384,
+        "color": "#400D11"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        -1040
+      ],
+      "id": "cf11dc31-815e-444b-82b7-8d7d9cb77284",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -528,
+        -256
+      ],
+      "id": "7dc6a883-7494-4e5a-94d7-8b9b190a64bd",
+      "name": " Voice Trigger",
+      "webhookId": "72772b77-d2a1-4e50-87ec-f3c415a2a2bc",
+      "credentials": {
+        "telegramApi": {
+          "id": "oW4xu05XxbTcrFqx",
+          "name": "Telegram mngr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -352,
+        -256
+      ],
+      "id": "ba658840-09c4-406f-b9d8-c68964de28ef",
+      "name": "Download Voice",
+      "webhookId": "9a83cb28-3f3f-4a7e-b9ab-17732e9225f2",
+      "credentials": {
+        "telegramApi": {
+          "id": "oW4xu05XxbTcrFqx",
+          "name": "Telegram mngr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "ru"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        -256
+      ],
+      "id": "79168546-d076-46f1-bdd7-70d4e01d9d80",
+      "name": "Speech to Text",
+      "credentials": {
+        "openAiApi": {
+          "id": "OFQo2ffaOtrQb6Xn",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c90c27f4-da8c-4618-877e-3bb207167367",
+              "name": "summary",
+              "value": "={{ $json.output[0].content[0].text.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "7edd9ea3-f4da-42bc-b82c-c782c468ccff",
+              "name": "client",
+              "value": "={{ $json.output[0].content[0].text.client }}",
+              "type": "string"
+            },
+            {
+              "id": "e17fce83-0a25-4433-b108-1bec220b39d2",
+              "name": "tasks",
+              "value": "={{ $json.output[0].content[0].text.tasks }}",
+              "type": "array"
+            },
+            {
+              "id": "826a25e1-8cb6-4b5d-bd21-b4488a56dae3",
+              "name": "meeting_date",
+              "value": "={{ $json.output[0].content[0].text.next_meeting_date }}",
+              "type": "string"
+            },
+            {
+              "id": "e9e45204-e4b8-453b-ba2c-f63e79774f78",
+              "name": "meeting_time",
+              "value": "={{ $json.output[0].content[0].text.next_meeting_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        -256
+      ],
+      "id": "27c460ea-df4a-41b0-9976-08e9560aa561",
+      "name": "Prepare Data"
+    },
+    {
+      "parameters": {
+        "chatId": "472650610",
+        "text": "=📝 Встреча обработана\n\n🏢 Клиент: {{ $json.client }}\n\n📄 Кратко:\n{{ $json.summary }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -640
+      ],
+      "id": "10c92fd6-14e3-4a0b-a69a-6aa2bd1a3b95",
+      "name": "Send Summary",
+      "webhookId": "53538438-05f4-4096-b7cf-c25abbcc5483",
+      "credentials": {
+        "telegramApi": {
+          "id": "oW4xu05XxbTcrFqx",
+          "name": "Telegram mngr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "74c89b86-d2af-4edd-840d-efc233aaf362",
+              "leftValue": "={{ $json.meeting_date }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        -256
+      ],
+      "id": "122ed72b-3c72-495e-b030-ec35fc5874e1",
+      "name": "Split Tasks"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "polonix315@gmail.com",
+          "mode": "list",
+          "cachedResultName": "polonix315@gmail.com"
+        },
+        "start": "={{ DateTime.fromISO($json.meeting_date + 'T' + $json.meeting_time + ':00') }}",
+        "end": "={{ DateTime.fromISO($json.meeting_date + 'T' + $json.meeting_time + ':00').plus({ hours: 1 }) }}",
+        "additionalFields": {
+          "summary": "={{ 'Повторный контакт: ' + $json.client }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        -272
+      ],
+      "id": "b36ca1e2-69a1-440e-af03-a68b88ba17d3",
+      "name": "Create Calendar Event1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RAPywS23Uwb6XIIa",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Z7c2DIzitzG3GURVWKUWdbt0aPuS8zRXnx-CDAg3j-4",
+          "mode": "list",
+          "cachedResultName": "lids",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z7c2DIzitzG3GURVWKUWdbt0aPuS8zRXnx-CDAg3j-4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Лист1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Z7c2DIzitzG3GURVWKUWdbt0aPuS8zRXnx-CDAg3j-4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Deadline": "={{ $json.tasks.deadline }}",
+            "Task": "={{ $json.tasks.task }}",
+            "Assignee": "={{ $json.tasks.assignee }}",
+            "Client": "={{ $json.client }}",
+            "Summary": "={{ $json.summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Client",
+              "displayName": "Client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Task",
+              "displayName": "Task",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Deadline",
+              "displayName": "Deadline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1664,
+        -272
+      ],
+      "id": "8fe9b5b4-5d9a-4e49-8c12-f1354381acd9",
+      "name": "Create Sheets event",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nutiHwbfHdSjnaeM",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{\n`Сегодня: ${$now.format('yyyy-MM-dd')}\n\nТы AI-помощник, который анализирует расшифровку встречи.\n\nТвоя задача:\n1. Сделать краткое summary встречи.\n2. Определить название клиента или компании, если оно упоминается.\n3. Выделить все задачи.\n4. Для каждой задачи определить исполнителя, описание задачи и дедлайн.\n5. Используй только информацию из расшифровки.\n6. Никогда не придумывай имена, компании, задачи, даты или сроки.\n7. Если дедлайн не указан, верни null.\n8. Если клиент не указан, верни пустую строку.\n9. Если задач нет, верни пустой массив tasks.\n10. Если упоминается следующая встреча или повторный контакт, верни точную дату в next_meeting_date в формате YYYY-MM-DD.\n11. Если время следующей встречи не указано, верни next_meeting_time = null.\n12. Относительные даты вроде \"завтра\", \"через неделю\", \"в следующий вторник\" вычисляй от текущей даты, указанной выше.\n\nРасшифровка встречи:\n${$json.text}`\n}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"summary\": {\n      \"type\": \"string\"\n    },\n    \"client\": {\n      \"type\": \"string\"\n    },\n    \"tasks\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"assignee\": {\n            \"type\": \"string\"\n          },\n          \"task\": {\n            \"type\": \"string\"\n          },\n          \"deadline\": {\n            \"type\": [\n              \"string\",\n              \"null\"\n            ]\n          }\n        },\n        \"required\": [\n          \"assignee\",\n          \"task\",\n          \"deadline\"\n        ],\n        \"additionalProperties\": false\n      }\n    },\n    \"next_meeting_date\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Дата следующей встречи в формате YYYY-MM-DD\"\n    },\n    \"next_meeting_time\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Время следующей встречи в формате HH:MM\"\n    }\n  },\n  \"required\": [\n    \"summary\",\n    \"client\",\n    \"tasks\",\n    \"next_meeting_date\",\n    \"next_meeting_time\"\n  ],\n  \"additionalProperties\": false\n}"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        192,
+        -256
+      ],
+      "id": "b21b7888-8b94-4f21-8136-b808933e8bd8",
+      "name": "AI Meeting Analysis (Structured Output)",
+      "credentials": {
+        "openAiApi": {
+          "id": "OFQo2ffaOtrQb6Xn",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Receive Meeting Recording\n\nReceive voice messages\nfrom Telegram",
+        "height": 304,
+        "width": 384,
+        "color": "#0C3B5F"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        -368
+      ],
+      "id": "89ab7c50-f39a-4be9-a532-542ec8b4cc84",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "Speech-to-Text\n\nConvert audio\nto transcript",
+        "height": 304,
+        "width": 192,
+        "color": "#1C620E"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        -368
+      ],
+      "id": "ac4e514e-575a-4bc7-86a3-6cc891b7f1ea",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "AI Meeting Analysis\n\nExtract structured\nmeeting information",
+        "height": 304,
+        "width": 288,
+        "color": "#323677"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -368
+      ],
+      "id": "f64fd94a-dc40-483a-9af8-9fafdcd32af3",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "Notifications\nSend meeting summary",
+        "height": 304,
+        "width": 192
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -752
+      ],
+      "id": "89f9781c-99e6-4e38-85ed-46bb17df7152",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "Task Processing\n\nProcess each task\nindividually",
+        "height": 304,
+        "width": 192,
+        "color": "#323677"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -368
+      ],
+      "id": "53e69745-b7ac-48fd-b0a4-b1c0e9dcb637",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "Prepare Data\n\nFormat AI output\nfor integrations",
+        "height": 304,
+        "width": 192,
+        "color": "#666300"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -368
+      ],
+      "id": "3062702d-d382-4817-95f8-b37540289e37",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "#Google Calendar\n\nCreate calendar\nevents",
+        "height": 304,
+        "width": 192,
+        "color": "#7C3004"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        -368
+      ],
+      "id": "8d2feebe-ef0f-4644-a5d7-53d03144a143",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "Google Sheets\n\nSave tasks",
+        "height": 304,
+        "width": 192,
+        "color": "#7C3004"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        -368
+      ],
+      "id": "3bc8f09a-af08-4dc3-bcff-7df40e63224e",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "Has Meeting Date?",
+        "height": 304,
+        "width": 192,
+        "color": "#323677"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -368
+      ],
+      "id": "7e726dfb-a93f-4935-b076-5cbf37fab27e",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tasks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        -272
+      ],
+      "id": "628442f2-685a-4a42-9aae-483024d28edc",
+      "name": "Has Meeting Date?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    " Voice Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Speech to Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Speech to Text": {
+      "main": [
+        [
+          {
+            "node": "AI Meeting Analysis (Structured Output)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "Send Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Tasks": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Event1": {
+      "main": [
+        [
+          {
+            "node": "Has Meeting Date?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Meeting Analysis (Structured Output)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Meeting Date?": {
+      "main": [
+        [
+          {
+            "node": "Create Sheets event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ddb6234b-6062-4375-9498-c1e01f22652f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2956e4cd5347a867f1090a368495256e2e072388f421e81930b3cb871ec25ba6"
+  },
+  "id": "XW0lymMv4cRUbact",
+  "tags": []
+}
