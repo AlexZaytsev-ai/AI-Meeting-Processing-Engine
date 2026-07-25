@@ -55,3 +55,40 @@ Telegram Summary
 - Google Calendar events are created only when meeting dates are detected.
 - Google Sheets is used as persistent task storage.
 - Telegram serves as the primary user interface.
+
+## 💬 Demo
+
+### 🎤 Input
+
+Voice message sent via Telegram.
+
+---
+
+### 🤖 AI Output
+
+**Summary**
+
+> The project kickoff meeting was held with the client. Development will begin on Monday. The design team will prepare the initial mockups.
+
+**Extracted Tasks**
+
+- Alex — Prepare project structure — Monday
+- Anna — Create UI mockups — Tuesday
+
+---
+
+### 📅 Google Calendar
+
+Meeting event created automatically when a meeting date is detected.
+
+---
+
+### 📊 Google Sheets
+
+All extracted tasks are automatically stored for further tracking.
+
+---
+
+### 📲 Telegram
+
+A concise meeting summary is sent back to the user.
