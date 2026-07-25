@@ -65,12 +65,9 @@ Telegram Summary
 ## Tech Stack
 
 n8n
-
 OpenAI GPT-4o
 Whisper
-
 Telegram Bot API
-
 Google Sheets API
 Google Calendar API
 
