@@ -25,16 +25,33 @@ The solution reduces manual work, improves consistency, and helps teams capture 
 
 ## 🔄 Workflow
 
+```text
 Telegram Voice Message
-        ↓
-Speech-to-Text (Whisper)
-        ↓
+        │
+        ▼
+Speech-to-Text
+        │
+        ▼
 AI Meeting Analysis
-        ↓
+        │
+        ▼
 Prepare Data
-        ↓
+        │
+        ▼
 Split Tasks
-      ↙         ↘
-Google Calendar  Google Sheets
-        ↓
+        ├── Google Calendar
+        └── Google Sheets
+        │
+        ▼
 Telegram Summary
+```
+
+
+## 🧠 Architecture Decisions
+
+- Whisper is used for speech-to-text transcription.
+- Structured Output guarantees predictable JSON responses.
+- Each extracted task is processed independently.
+- Google Calendar events are created only when meeting dates are detected.
+- Google Sheets is used as persistent task storage.
+- Telegram serves as the primary user interface.
