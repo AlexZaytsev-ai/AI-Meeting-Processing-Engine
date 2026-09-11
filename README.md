@@ -95,6 +95,6 @@ The Telegram, task storage, and calendar branches run independently after the me
 
 ## Author
 
-Alexander Zaytsev
-Junior AI Automation Engineer
+**Alexander Zaytsev**  
+Junior AI Automation Engineer  
 [GitHub Profile](https://github.com/AlexZaytsev-ai)
