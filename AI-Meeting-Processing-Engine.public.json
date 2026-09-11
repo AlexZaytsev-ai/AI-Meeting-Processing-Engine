@@ -1,0 +1,635 @@
+{
+  "name": "AI Meeting Processing Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "AI Meeting Processing Engine\n\n\nAutomatically processes voice meetings:\n\n• Generate summary\n• Extract action items\n• Save tasks to Google Sheets\n• Create Google Calendar events\n\n\nStack\n\n• n8n\n• OpenAI GPT-4.1 Mini\n• Whisper\n• Structured Output\n• Telegram Bot API\n• Google Sheets API\n• Google Calendar API\n• Google OAuth2",
+        "height": 576,
+        "width": 384,
+        "color": "#400D11"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        -2640
+      ],
+      "id": "cf11dc31-815e-444b-82b7-8d7d9cb77284",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "После встреч командам часто приходится вручную составлять краткие итоги, выделять задачи и обновлять трекеры задач и календари. Этот процесс повторяется постоянно, занимает много времени и подвержен человеческим ошибкам.\n\nДанный workflow автоматизирует весь процесс обработки встречи: преобразует голосовую запись в текст, с помощью AI извлекает структурированную информацию о встрече, сохраняет задачи в Google Sheets, создает события в Google Calendar при обнаружении даты следующей встречи и отправляет краткое резюме обратно в Telegram.\n\n\nWorkflow получает голосовое сообщение из Telegram, преобразует его в текст с помощью Whisper, анализирует расшифровку через OpenAI, извлекает структурированные данные о встрече, сохраняет задачи в Google Sheets, создает события в Google Calendar при обнаружении даты встречи и отправляет краткое резюме обратно в Telegram.",
+        "height": 608,
+        "width": 448,
+        "color": "#400D11"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -2176
+      ],
+      "id": "3ee8a601-9cdc-4050-bdde-1bb55141cf79",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        -240
+      ],
+      "id": "7dc6a883-7494-4e5a-94d7-8b9b190a64bd",
+      "name": "Voice Trigger / Голосовой триггер"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c2dd75c7-c1fc-4506-8267-1bbca708e197",
+              "leftValue": "={{ $json.message.voice.file_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -576,
+        -240
+      ],
+      "id": "d733c3e3-c06c-4530-8309-8bb3d6f2bc87",
+      "name": "Check Voice Message / Проверка голосового сообщения"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.message.chat.id + ':' + $json.message.voice.file_unique_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        -256
+      ],
+      "id": "a3747163-8549-442a-b9bb-e8deff37ee6a",
+      "name": "Prevent Duplicate Processing / Защита от повторной обработки",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        -272
+      ],
+      "id": "ba658840-09c4-406f-b9d8-c68964de28ef",
+      "name": "Download Voice / Загрузка голосового сообщения",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "ru"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        112,
+        -288
+      ],
+      "id": "79168546-d076-46f1-bdd7-70d4e01d9d80",
+      "name": "Speech to Text / Расшифровка аудио",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.1",
+          "mode": "list",
+          "cachedResultName": "GPT-5.1"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "={{\n`Сегодня: ${$now.format('yyyy-MM-dd')}\n\nТы AI-помощник, который анализирует расшифровку встречи.\n\nТвоя задача:\n1. Сделать краткое summary встречи.\n2. Определить название клиента или компании, если оно упоминается.\n3. Выделить все задачи.\n4. Для каждой задачи определить исполнителя, описание задачи и дедлайн.\n5. Используй только информацию из расшифровки.\n6. Никогда не придумывай имена, компании, задачи, даты или сроки.\n7. Если дедлайн не указан, верни null.\n8. Если клиент не указан, верни пустую строку.\n9. Если задач нет, верни пустой массив tasks.\n10. Если упоминается следующая встреча или повторный контакт, верни точную дату в next_meeting_date в формате YYYY-MM-DD.\n11. Если время следующей встречи не указано, верни next_meeting_time = null.\n12. Относительные даты вроде \"завтра\", \"через неделю\", \"в следующий вторник\" вычисляй от текущей даты, указанной выше.\n13. Указывай assignee только если исполнитель назван однозначно. Если имя или роль исполнителя неясны, верни assignee = \"\". Не преобразуй местоимения «я», «ты», «вы», «вам» в имя и не угадывай исполнителя.`\n\n}}"
+            },
+            {
+              "content": "={{ `Расшифровка встречи:\\n${$json.text}` }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"summary\": {\n      \"type\": \"string\"\n    },\n    \"client\": {\n      \"type\": \"string\"\n    },\n    \"tasks\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"assignee\": {\n            \"type\": \"string\"\n          },\n          \"task\": {\n            \"type\": \"string\"\n          },\n          \"deadline\": {\n            \"type\": [\n              \"string\",\n              \"null\"\n            ]\n          }\n        },\n        \"required\": [\n          \"assignee\",\n          \"task\",\n          \"deadline\"\n        ],\n        \"additionalProperties\": false\n      }\n    },\n    \"next_meeting_date\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Дата следующей встречи в формате YYYY-MM-DD\"\n    },\n    \"next_meeting_time\": {\n      \"type\": [\n        \"string\",\n        \"null\"\n      ],\n      \"description\": \"Время следующей встречи в формате HH:MM\"\n    }\n  },\n  \"required\": [\n    \"summary\",\n    \"client\",\n    \"tasks\",\n    \"next_meeting_date\",\n    \"next_meeting_time\"\n  ],\n  \"additionalProperties\": false\n}",
+              "strict": true
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        352,
+        -304
+      ],
+      "id": "b21b7888-8b94-4f21-8136-b808933e8bd8",
+      "name": "AI Meeting Analysis / AI-анализ встречи",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c90c27f4-da8c-4618-877e-3bb207167367",
+              "name": "summary",
+              "value": "={{ $json.output[0].content[0].text.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "7edd9ea3-f4da-42bc-b82c-c782c468ccff",
+              "name": "client",
+              "value": "={{ $json.output[0].content[0].text.client }}",
+              "type": "string"
+            },
+            {
+              "id": "e17fce83-0a25-4433-b108-1bec220b39d2",
+              "name": "tasks",
+              "value": "={{ $json.output[0].content[0].text.tasks }}",
+              "type": "array"
+            },
+            {
+              "id": "826a25e1-8cb6-4b5d-bd21-b4488a56dae3",
+              "name": "meeting_date",
+              "value": "={{ $json.output[0].content[0].text.next_meeting_date }}",
+              "type": "string"
+            },
+            {
+              "id": "e9e45204-e4b8-453b-ba2c-f63e79774f78",
+              "name": "meeting_time",
+              "value": "={{ $json.output[0].content[0].text.next_meeting_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        -320
+      ],
+      "id": "27c460ea-df4a-41b0-9976-08e9560aa561",
+      "name": "Prepare Data / Подготовка данных"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Voice Trigger / Голосовой триггер').item.json.message.chat.id }}",
+        "text": "=📝 Встреча обработана\n\n🏢 Клиент: {{ $json.client || 'Не указан' }}\n\n📄 Кратко:\n{{ $json.summary }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        -480
+      ],
+      "id": "10c92fd6-14e3-4a0b-a69a-6aa2bd1a3b95",
+      "name": "Send Summary / Отправка резюме"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tasks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        -320
+      ],
+      "id": "628442f2-685a-4a42-9aae-483024d28edc",
+      "name": "Split Tasks / Разделение задач"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Лист1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Summary": "={{ $json.summary }}",
+            "Client": "={{ $json.client }}",
+            "Assignee": "={{ $json.tasks.assignee }}",
+            "Task": "={{ $json.tasks.task }}",
+            "Deadline": "={{ $json.tasks.deadline }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Client",
+              "displayName": "Client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Task",
+              "displayName": "Task",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Deadline",
+              "displayName": "Deadline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -320
+      ],
+      "id": "8fe9b5b4-5d9a-4e49-8c12-f1354381acd9",
+      "name": "Save Tasks to Google Sheets / Сохранение задач в Google Sheets",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "74c89b86-d2af-4edd-840d-efc233aaf362",
+              "leftValue": "={{ $json.meeting_date }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0e76658c-ee49-42e8-9e4d-bb5da142abc9",
+              "leftValue": "={{ $json.meeting_time }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        -112
+      ],
+      "id": "122ed72b-3c72-495e-b030-ec35fc5874e1",
+      "name": "Check Meeting Date & Time / Проверка даты и времени"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_CALENDAR_ID",
+          "mode": "id"
+        },
+        "start": "={{ DateTime.fromISO($json.meeting_date + 'T' + $json.meeting_time + ':00') }}",
+        "end": "={{ DateTime.fromISO($json.meeting_date + 'T' + $json.meeting_time + ':00').plus({ hours: 1 }) }}",
+        "additionalFields": {
+          "summary": "={{ $json.client ? 'Повторный контакт: ' + $json.client : 'Следующая встреча' }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        -128
+      ],
+      "id": "b36ca1e2-69a1-440e-af03-a68b88ba17d3",
+      "name": "Create Calendar Event / Создание события в календаре",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=🎙 Пожалуйста, отправьте голосовое сообщение с записью встречи.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -352,
+        -64
+      ],
+      "id": "a16d208f-cac6-417e-983c-42b7562a1e0b",
+      "name": "Request Voice Message / Запрос голосового сообщения"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Voice Trigger / Голосовой триггер').first().json.message.chat.id }}",
+        "text": "=⚠️ Не удалось обработать голосовое сообщение. Запишите и отправьте его ещё раз.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        -112
+      ],
+      "id": "68f6c94b-ae94-44bb-a8e9-f036acf3f2fd",
+      "name": "Send Processing Error / Ошибка обработки"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Voice Trigger / Голосовой триггер').first().json.message.chat.id }}",
+        "text": "=⚠️ Встреча проанализирована, но часть данных не удалось сохранить в Google Sheets или Calendar. Проверьте выполнение workflow.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1536,
+        -224
+      ],
+      "id": "6dc35094-8780-451f-b5f4-958427ca6c1d",
+      "name": "Send Integration Error / Ошибка интеграций"
+    }
+  ],
+  "connections": {
+    "Voice Trigger / Голосовой триггер": {
+      "main": [
+        [
+          {
+            "node": "Check Voice Message / Проверка голосового сообщения",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Voice Message / Проверка голосового сообщения": {
+      "main": [
+        [
+          {
+            "node": "Prevent Duplicate Processing / Защита от повторной обработки",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request Voice Message / Запрос голосового сообщения",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prevent Duplicate Processing / Защита от повторной обработки": {
+      "main": [
+        [
+          {
+            "node": "Download Voice / Загрузка голосового сообщения",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Processing Error / Ошибка обработки",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice / Загрузка голосового сообщения": {
+      "main": [
+        [
+          {
+            "node": "Speech to Text / Расшифровка аудио",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Processing Error / Ошибка обработки",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Speech to Text / Расшифровка аудио": {
+      "main": [
+        [
+          {
+            "node": "AI Meeting Analysis / AI-анализ встречи",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Processing Error / Ошибка обработки",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Meeting Analysis / AI-анализ встречи": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data / Подготовка данных",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Processing Error / Ошибка обработки",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data / Подготовка данных": {
+      "main": [
+        [
+          {
+            "node": "Send Summary / Отправка резюме",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Meeting Date & Time / Проверка даты и времени",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Tasks / Разделение задач",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Tasks / Разделение задач": {
+      "main": [
+        [
+          {
+            "node": "Save Tasks to Google Sheets / Сохранение задач в Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Tasks to Google Sheets / Сохранение задач в Google Sheets": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send Integration Error / Ошибка интеграций",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Meeting Date & Time / Проверка даты и времени": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Event / Создание события в календаре",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Event / Создание события в календаре": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send Integration Error / Ошибка интеграций",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
