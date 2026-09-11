@@ -93,9 +93,9 @@ Prepare Data / Подготовка данных
 └── LICENSE
 ```
 
-## Автор
+## Author
 
-**Alexander Zaytsev**
-Junior AI Automation Engineer
-[Профиль GitHub](https://github.com/AlexZaytsev-ai)
+**Alexander Zaytsev**  
+Junior AI Automation Engineer  
+[GitHub Profile](https://github.com/AlexZaytsev-ai)
 
